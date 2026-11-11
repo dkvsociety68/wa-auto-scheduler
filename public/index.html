@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WA Auto Scheduler</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#128c7e">
+    <link rel="stylesheet" href="style.css">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top App Bar -->
+        <header class="app-header">
+            <div class="header-left">
+                <i class="fa-brands fa-whatsapp header-icon"></i>
+                <div>
+                    <h1 class="header-title">WA Auto Scheduler</h1>
+                    <p class="header-subtitle" id="headerSubtitle">Memeriksa koneksi...</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <span class="status-pill status-connecting" id="globalStatusPill">
+                    <span class="status-dot"></span> <span id="statusText">Menghubungkan</span>
+                </span>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="app-content">
+            <!-- TAB 1: KONEKSI WHATSAPP -->
+            <section class="tab-pane active" id="paneConnection">
+                <div class="card connection-card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-qrcode"></i> Tautan WhatsApp Web</h2>
+                    </div>
+                    <div class="card-body text-center">
+                        <!-- QR Code Container -->
+                        <div id="qrContainer" class="qr-box">
+                            <div class="spinner-loader" id="qrSpinner"></div>
+                            <img id="qrImage" src="" alt="Scan QR Code" style="display: none;">
+                            <p class="qr-hint" id="qrHint">Sedang menyiapkan QR Code...</p>
+                        </div>
+
+                        <!-- Connected Container -->
+                        <div id="connectedContainer" class="connected-box" style="display: none;">
+                            <div class="success-icon-badge">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                            <h3>WhatsApp Terhubung!</h3>
+                            <p class="connected-phone">Nomor: <strong id="connectedPhone">-</strong></p>
+                            <p class="connected-desc">Bot WhatsApp siap mengirim pesan otomatis terjadwal kapan saja.</p>
+                            <button class="btn btn-danger btn-sm" id="btnLogout">
+                                <i class="fa-solid fa-arrow-right-from-bracket"></i> Putuskan Sesi / Logout
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-footer instructions">
+                        <h4>Cara Menautkan WhatsApp:</h4>
+                        <ol>
+                            <li>Buka aplikasi WhatsApp di HP Anda.</li>
+                            <li>Tekan menu titik tiga (⋮) atau <strong>Pengaturan</strong>.</li>
+                            <li>Pilih <strong>Perangkat Tertaut (Linked Devices)</strong>.</li>
+                            <li>Tekan <strong>Tautkan Perangkat</strong> lalu arahkan kamera ke QR code di atas.</li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: BUAT JADWAL PESAN -->
+            <section class="tab-pane" id="paneSchedule">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-clock"></i> Jadwalkan Pesan Baru</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="formSchedule">
+                            <!-- Target Type Selector -->
+                            <div class="form-group">
+                                <label class="label-title">Kirim Kepada:</label>
+                                <div class="segmented-control">
+                                    <button type="button" class="segment-btn active" id="btnTypeContact" data-type="contact">
+                                        <i class="fa-solid fa-user"></i> Kontak Pribadi
+                                    </button>
+                                    <button type="button" class="segment-btn" id="btnTypeGroup" data-type="group">
+                                        <i class="fa-solid fa-users"></i> Grup WhatsApp
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Input Target: Kontak Pribadi -->
+                            <div class="form-group" id="groupContactTarget">
+                                <label for="targetContact">Nomor WhatsApp Tujuan:</label>
+                                <div class="input-prefix-box">
+                                    <span class="prefix">+62</span>
+                                    <input type="tel" id="targetContact" placeholder="81234567890" inputmode="numeric">
+                                </div>
+                                <span class="input-help">Contoh: 08123456789 atau 8123456789</span>
+                            </div>
+
+                            <!-- Input Target: Grup WhatsApp -->
+                            <div class="form-group" id="groupGroupTarget" style="display: none;">
+                                <div class="flex-between">
+                                    <label for="selectGroup">Pilih Grup:</label>
+                                    <button type="button" class="btn-link" id="btnRefreshGroups">
+                                        <i class="fa-solid fa-arrows-rotate"></i> Muat Ulang Grup
+                                    </button>
+                                </div>
+                                <select id="selectGroup">
+                                    <option value="" disabled selected>-- Memuat daftar grup... --</option>
+                                </select>
+                                <span class="input-help">Grup diambil otomatis dari akun WhatsApp Anda yang terhubung.</span>
+                            </div>
+
+                            <!-- Isi Pesan -->
+                            <div class="form-group">
+                                <label for="messageText">Isi Pesan:</label>
+                                <textarea id="messageText" rows="4" placeholder="Tuliskan pesan yang akan dikirim otomatis..."></textarea>
+                                <div class="text-right">
+                                    <span class="char-count" id="charCount">0 karakter</span>
+                                </div>
+                            </div>
+
+                            <!-- Waktu Pengiriman -->
+                            <div class="form-group">
+                                <label for="scheduledAt">Waktu Kirim:</label>
+                                <input type="datetime-local" id="scheduledAt" required>
+                                
+                                <!-- Shortcut Waktu -->
+                                <div class="time-shortcuts">
+                                    <button type="button" class="shortcut-chip" data-mins="5">+5 Menit</button>
+                                    <button type="button" class="shortcut-chip" data-mins="15">+15 Menit</button>
+                                    <button type="button" class="shortcut-chip" data-mins="60">+1 Jam</button>
+                                    <button type="button" class="shortcut-chip" data-special="tomorrow-8am">Besok 08:00</button>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary" id="btnSubmitSchedule">
+                                    <i class="fa-solid fa-calendar-plus"></i> Simpan Jadwal Pesan
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="btnSendImmediately">
+                                    <i class="fa-solid fa-paper-plane"></i> Kirim Sekarang Saja
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: ANTREAN & RIWAYAT -->
+            <section class="tab-pane" id="paneHistory">
+                <div class="card">
+                    <div class="card-header flex-between">
+                        <h2><i class="fa-solid fa-list-check"></i> Daftar Jadwal & Riwayat</h2>
+                        <button class="btn btn-sm btn-outline" id="btnReloadSchedules">
+                            <i class="fa-solid fa-rotate-right"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <!-- Filter chips -->
+                        <div class="filter-chips">
+                            <button class="filter-chip active" data-filter="all">Semua (<span id="countAll">0</span>)</button>
+                            <button class="filter-chip" data-filter="pending">Menunggu (<span id="countPending">0</span>)</button>
+                            <button class="filter-chip" data-filter="sent">Terkirim (<span id="countSent">0</span>)</button>
+                            <button class="filter-chip" data-filter="failed">Gagal (<span id="countFailed">0</span>)</button>
+                        </div>
+
+                        <!-- Schedules List -->
+                        <div class="schedule-list" id="scheduleListContainer">
+                            <div class="empty-state">
+                                <i class="fa-regular fa-calendar-xmark"></i>
+                                <p>Belum ada jadwal pesan yang dibuat.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation Bar (Android Mobile App Style) -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-target="paneConnection">
+                <i class="fa-solid fa-qrcode"></i>
+                <span>Koneksi</span>
+            </button>
+            <button class="nav-item" data-target="paneSchedule">
+                <i class="fa-solid fa-circle-plus"></i>
+                <span>Jadwalkan</span>
+            </button>
+            <button class="nav-item" data-target="paneHistory">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>Riwayat</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastNotification" class="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
